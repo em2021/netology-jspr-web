@@ -20,6 +20,22 @@ public class Main {
                 System.out.println(e.getMessage());
             }
         });
+        server.addHandler("GET", "/forms.html", (request, responseStream) -> {
+            Path path = Path.of(".", "/public", request.getPath());
+            if (request.getQueryParams() != null) {
+                responseStream.write("<p>Query params are:<br>".getBytes());
+                request.getQueryParams().forEach(s -> {
+                    try {
+                        responseStream.write((s.toString() + "<br>").getBytes());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+                responseStream.write("</p>".getBytes());
+            } else {
+                responseStream.write(Files.readString(path).getBytes());
+            }
+        });
         server.listen(9999);
     }
 }
