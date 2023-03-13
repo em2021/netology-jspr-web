@@ -12,7 +12,7 @@ public class Request {
     private final String path;
     private final List<NameValuePair> params;
     private final String headers;
-    private final Map<String, List<NameValuePair>> body = new HashMap<>();
+    private final Map<String, List<String>> body = new HashMap<>();
 
     public Request(String method, String path, String params, String headers, String body) {
         this.method = method;
@@ -59,20 +59,20 @@ public class Request {
         postParams.forEach(pair -> {
             String name = pair.getName();
             if (this.body.containsKey(name)) {
-                this.body.get(name).add(pair);
+                this.body.get(name).add(pair.getValue());
             } else {
-                List<NameValuePair> paramsList = new ArrayList<>();
-                paramsList.add(pair);
+                List<String> paramsList = new ArrayList<>();
+                paramsList.add(pair.getValue());
                 this.body.put(name, paramsList);
             }
         });
     }
 
-    public Map<String, List<NameValuePair>> getPostParams() {
+    public Map<String, List<String>> getPostParams() {
         return body;
     }
 
-    public List<NameValuePair> getPostParam(String name) {
+    public List<String> getPostParam(String name) {
         return body.get(name);
     }
 
