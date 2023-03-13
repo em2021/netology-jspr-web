@@ -3,6 +3,7 @@ package ru.netology;
 import java.io.*;
 import java.net.ServerSocket;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.*;
 
 import ru.netology.Handler;
@@ -10,6 +11,9 @@ import ru.netology.Handler;
 public class Server {
 
     private final Path resourcesRoot = Path.of(".", "public");
+    private static final String GET = "GET";
+    private static final String POST = "POST";
+    private static final List<String> allowedMethods = List.of(GET, POST);
     private final ExecutorService threadPool = Executors.newFixedThreadPool(64);
     private final ConcurrentMap<String, ConcurrentMap<String, Handler>> handlers = new ConcurrentHashMap<>();
 
@@ -45,5 +49,9 @@ public class Server {
             }
         }
         return h;
+    }
+
+    public List<String> getAllowedMethods() {
+        return allowedMethods;
     }
 }

@@ -4,9 +4,7 @@ import org.apache.hc.core5.http.NameValuePair;
 import org.apache.hc.core5.net.URLEncodedUtils;
 
 import java.nio.charset.Charset;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.*;
 
 public class Request {
 
@@ -14,13 +12,15 @@ public class Request {
     private final String path;
     private final List<NameValuePair> params;
     private final String headers;
-    private final String body;
+    private final Map<String, List<String>> body = new HashMap<>();
 
     public Request(String method, String path, String params, String headers, String body) {
         this.method = method;
         this.path = path;
         this.headers = headers;
-        this.body = body;
+        if (body != null) {
+            setBody(body);
+        }
         if (params != null) {
             this.params = URLEncodedUtils.parse(params, Charset.defaultCharset());
         } else {
@@ -54,11 +54,29 @@ public class Request {
         return value;
     }
 
-    public String getHeaders() {
-        return headers;
+    private void setBody(String body) {
+        List<NameValuePair> postParams = URLEncodedUtils.parse(body, Charset.defaultCharset());
+        postParams.forEach(pair -> {
+            String name = pair.getName();
+            if (this.body.containsKey(name)) {
+                this.body.get(name).add(pair.getValue());
+            } else {
+                List<String> paramsList = new ArrayList<>();
+                paramsList.add(pair.getValue());
+                this.body.put(name, paramsList);
+            }
+        });
     }
 
-    public String getBody() {
+    public Map<String, List<String>> getPostParams() {
         return body;
+    }
+
+    public List<String> getPostParam(String name) {
+        return body.get(name);
+    }
+
+    public String getHeaders() {
+        return headers;
     }
 }

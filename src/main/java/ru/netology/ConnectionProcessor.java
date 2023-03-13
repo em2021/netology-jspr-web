@@ -1,9 +1,13 @@
 package ru.netology;
 
+import org.apache.hc.core5.net.URLEncodedUtils;
+
 import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 public class ConnectionProcessor implements Runnable {
 
@@ -30,13 +34,17 @@ public class ConnectionProcessor implements Runnable {
             String path;
             String params;
             String headers;
-            String body;
+            int contentLength;
+            String body = null;
             String[] requestLine = extractRequestLine();
             method = validateMethod(extractMethod(requestLine));
             path = validatePath(extractPath(requestLine));
             params = extractParams(requestLine);
             headers = extract();
-            body = extract();
+            contentLength = extractContentLength(headers);
+            if (contentLength > 0) {
+                body = extractBody(contentLength);
+            }
             if (method != null && path != null) {
                 Request request = new Request(method, path, params, headers, body);
                 this.handler = server.getHandler(method, path);
@@ -47,6 +55,11 @@ public class ConnectionProcessor implements Runnable {
                 if (handler != null) {
                     handler.handle(request, out);
                 }
+            } else if (method.equals("POST") && path == null) {
+                path = "null";
+                Request request = new Request(method, path, params, headers, body);
+                final var content = request.getPostParams().toString().getBytes();
+                responseWriter(out, null, path, content, handler);
             } else {
                 responseWriter(out, null, null, null, handler);
             }
@@ -97,7 +110,7 @@ public class ConnectionProcessor implements Runnable {
     }
 
     private String validateMethod(String method) throws IOException {
-        if (!method.equals("GET") && !method.equals("POST")) {
+        if (!server.getAllowedMethods().contains(method)) {
             return null;
         }
         return method;
@@ -116,7 +129,24 @@ public class ConnectionProcessor implements Runnable {
                 sb.append("\r\n");
             }
         }
-        return sb.toString();
+        return sb.toString().trim();
+    }
+
+    private String extractBody(int contentLength) throws IOException {
+        char[] buf = new char[contentLength];
+        in.read(buf, 0, contentLength);
+        return new String(buf);
+    }
+
+    private int extractContentLength(String headers) {
+        if (headers != null) {
+            Optional<String> cl = headers.lines().filter(s -> s.startsWith("Content-Length:")).findFirst();
+            if (cl.isPresent()) {
+                String clLine = cl.get().trim();
+                return Integer.parseInt(clLine.substring(clLine.indexOf(" ") + 1));
+            }
+        }
+        return 0;
     }
 
     private byte[] contentHandler(Path filePath) throws IOException {
