@@ -30,11 +30,13 @@ public class Server {
     public void addHandler(String method, String path, Handler handler) throws Exception {
         ConcurrentMap<String, Handler> pathHandlerMap = new ConcurrentHashMap<>();
         pathHandlerMap.put(path, handler);
-        if (handlers.containsKey(method)) { // check if map contains key (method)
-            if (handlers.get(method).containsKey(path)) { // if yes - check if value map contains key (path)
+        if (handlers.containsKey(method)) { // check if handlers map contains key (method)
+            // if yes - check if associated value map contains a handler associated with the key (path)
+            if (handlers.get(method).containsKey(path)) {
+                //if yes - print message to console
                 System.out.println("A handler with method \"" + method + "\" is already associated with the path \"" + path + "\"");
-            } else { // if no - add new value map
-                handlers.put(method, pathHandlerMap);
+            } else { // if no - add new handler to existing value map
+                handlers.get(method).put(path, handler);
             }
         } else { // if no - add new key with new map value
             handlers.put(method, pathHandlerMap);
